@@ -328,17 +328,13 @@ services:
     
     if env_check:
         html += f"""
-        <p>端口修改接口：</p>
+        <p>端口修改接口(Plex自带的远程访问，手动指定端口选项)：</p>
         <div class="endpoint">
             http://{host}:{port}/change-port/#{{port}}
         </div>
         <p>自定义URL修改接口：</p>
         <div class="endpoint">
-            http://{host}:{port}/change-custom-url/ip:port
-        </div>
-        <p>示例：</p>
-        <div class="endpoint">
-            http://{host}:{port}/change-custom-url/192.168.1.100:32400
+            http://{host}:{port}/change-custom-url/#{{ipAddr}}
         </div>
         <p>请求方法：</p>
         <div class="endpoint">
