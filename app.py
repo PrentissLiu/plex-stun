@@ -198,8 +198,24 @@ def change_custom_url(custom_url):
         # 获取当前的自定义连接列表
         current_urls = plex.settings.get('customConnections').value.split(',') if plex.settings.get('customConnections').value else []
         
-        # 添加新的URL（如果不存在）
-        if custom_url not in current_urls:
+        # 解析新的URL
+        from urllib.parse import urlparse
+        new_url_parsed = urlparse(custom_url)
+        new_host = new_url_parsed.hostname
+        new_port = new_url_parsed.port or (443 if new_url_parsed.scheme == 'https' else 80)
+        
+        # 检查是否存在相同IP的URL
+        updated = False
+        for i, url in enumerate(current_urls):
+            parsed = urlparse(url)
+            if parsed.hostname == new_host:
+                # 如果找到相同IP的URL,只更新端口
+                current_urls[i] = f"{parsed.scheme}://{parsed.hostname}:{new_port}"
+                updated = True
+                break
+                
+        # 如果没有找到相同IP的URL,添加新URL
+        if not updated:
             current_urls.append(custom_url)
         
         # 更新设置
@@ -208,7 +224,7 @@ def change_custom_url(custom_url):
         
         return jsonify({
             "success": True,
-            "message": f"自定义URL已成功添加: {custom_url}",
+            "message": f"自定义URL已{'更新端口' if updated else '添加'}: {custom_url}",
             "current_urls": current_urls
         })
     except Exception as e:
