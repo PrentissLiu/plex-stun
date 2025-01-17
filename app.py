@@ -158,6 +158,65 @@ def change_port(new_port):
             "message": f"修改端口时发生错误: {str(e)}"
         }), 500
 
+@app.route('/change-custom-url/<path:custom_url>', methods=['GET'])
+def change_custom_url(custom_url):
+    """
+    处理自定义URL修改请求的Flask路由
+    """
+    # 检查环境变量
+    env_check, error_msg = check_environment()
+    if not env_check:
+        return jsonify({
+            "success": False,
+            "message": error_msg
+        }), 500
+
+    # 验证URL格式
+    if not custom_url.startswith(('http://', 'https://')):
+        custom_url = f"http://{custom_url}"
+
+    # 定义令牌存储文件
+    TOKEN_FILE = os.path.join(os.path.dirname(__file__), "token/plex_token.json")
+
+    # 从文件中读取令牌或生成新令牌
+    PLEX_TOKEN = read_token_from_file(TOKEN_FILE)
+
+    # 如果文件中没有令牌，或者令牌无效，则生成新令牌
+    if PLEX_TOKEN is None or not check_token_validity(PLEX_SERVER_BASEURL, PLEX_TOKEN):
+        PLEX_TOKEN = get_plex_token()
+        if PLEX_TOKEN:
+            save_token_to_file(TOKEN_FILE, PLEX_TOKEN)
+        else:
+            return jsonify({
+                "success": False,
+                "message": "获取有效令牌失败"
+            }), 500
+
+    # 使用 plexapi 连接到 Plex 服务器并修改自定义URL
+    try:
+        plex = PlexServer(PLEX_SERVER_BASEURL, PLEX_TOKEN)
+        # 获取当前的自定义连接列表
+        current_urls = plex.settings.get('customConnections').value.split(',') if plex.settings.get('customConnections').value else []
+        
+        # 添加新的URL（如果不存在）
+        if custom_url not in current_urls:
+            current_urls.append(custom_url)
+        
+        # 更新设置
+        plex.settings.get('customConnections').set(','.join(current_urls))
+        plex.settings.save()
+        
+        return jsonify({
+            "success": True,
+            "message": f"自定义URL已成功添加: {custom_url}",
+            "current_urls": current_urls
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"修改自定义URL时发生错误: {str(e)}"
+        }), 500
+
 @app.route('/')
 def index():
     """
@@ -253,9 +312,17 @@ services:
     
     if env_check:
         html += f"""
-        <p>接口地址：</p>
+        <p>端口修改接口：</p>
         <div class="endpoint">
             http://{host}:{port}/change-port/#{{port}}
+        </div>
+        <p>自定义URL修改接口：</p>
+        <div class="endpoint">
+            http://{host}:{port}/change-custom-url/ip:port
+        </div>
+        <p>示例：</p>
+        <div class="endpoint">
+            http://{host}:{port}/change-custom-url/192.168.1.100:32400
         </div>
         <p>请求方法：</p>
         <div class="endpoint">
