@@ -9,7 +9,7 @@
 - 支持与Lucky工具集成
 
 代码来源：
-致谢来源于 [NodeSeek 论坛](https://www.nodeseek.com/post-184057-1)，我只是将原脚本改写成可部署的Docker服务。
+代码从 [NodeSeek 论坛](https://www.nodeseek.com/post-184057-1) 的脚本而来，增加了自定义URL更改的选项，并可部署为Docker服务。
 
 
 ## 快速开始
@@ -72,8 +72,15 @@ docker run -d \
 ### 接口信息
 
 - 接口地址：
+
+修改Plex自带的远程访问，手动指定端口选项
 ```
 http://<your-ip>:4201/change-port/#{port}
+```
+
+修改自定义URL
+```
+http://<your-ip>:4201/change-custom-url/#{ipAddr}
 ```
 
 - 请求方法：
